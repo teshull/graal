@@ -52,11 +52,11 @@ public final class LogicCompareAndSwapNode extends AbstractCompareAndSwapNode {
     public static final NodeClass<LogicCompareAndSwapNode> TYPE = NodeClass.create(LogicCompareAndSwapNode.class);
 
     public LogicCompareAndSwapNode(ValueNode address, ValueNode expectedValue, ValueNode newValue, LocationIdentity location) {
-        this((AddressNode) address, location, expectedValue, newValue, BarrierType.NONE);
+        this((AddressNode) address, location, expectedValue, newValue, BarrierType.NONE, DEFAULT_MEMORY_BARRIER);
     }
 
-    public LogicCompareAndSwapNode(AddressNode address, LocationIdentity location, ValueNode expectedValue, ValueNode newValue, BarrierType barrierType) {
-        super(TYPE, address, location, expectedValue, newValue, barrierType, StampFactory.forInteger(JavaKind.Int, 0, 1));
+    public LogicCompareAndSwapNode(AddressNode address, LocationIdentity location, ValueNode expectedValue, ValueNode newValue, BarrierType barrierType, int memoryBarrier) {
+        super(TYPE, address, location, expectedValue, newValue, barrierType, StampFactory.forInteger(JavaKind.Int, 0, 1), memoryBarrier);
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class LogicCompareAndSwapNode extends AbstractCompareAndSwapNode {
         Value trueResult = tool.emitConstant(resultKind, JavaConstant.TRUE);
         Value falseResult = tool.emitConstant(resultKind, JavaConstant.FALSE);
         Value result = tool.emitLogicCompareAndSwap(tool.getLIRKind(getAccessStamp(NodeView.DEFAULT)), gen.operand(getAddress()), gen.operand(getExpectedValue()), gen.operand(getNewValue()),
-                        trueResult, falseResult);
+                        trueResult, falseResult, memoryBarrier);
 
         gen.setResult(this, result);
     }
