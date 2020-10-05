@@ -1388,6 +1388,41 @@ public abstract class AArch64Assembler extends Assembler {
         exclusiveStoreInstruction(STXR, rs, rt, rn, transferSize);
     }
 
+    /**
+     * Load exclusive. Natural alignment of address is required.
+     *
+     * @param size size of memory read in bits. Must be 8, 16, 32 or 64.
+     * @param rt general purpose register. May not be null or stackpointer.
+     * @param rn general purpose register.
+     * @param acquire memory ordering flag. Decide whether the load has acquire semantics.
+     */
+    public void loadExclusive(int size, Register rt, Register rn, boolean acquire) {
+        if (acquire) {
+            ldaxr(size, rt, rn);
+        } else {
+            ldxr(size, rt, rn);
+        }
+    }
+
+    /**
+     * Store exclusive. Natural alignment of address is required. rs and rt may not point to the
+     * same register.
+     *
+     * @param size size of bits written to memory. Must be 8, 16, 32 or 64.
+     * @param rs general purpose register. Set to exclusive access status. 0 means success,
+     *            everything else failure. May not be null, or stackpointer.
+     * @param rt general purpose register. May not be null or stackpointer.
+     * @param rn general purpose register.
+     * @param release memory ordering flag. Decide whether the store has release semantics.
+     */
+    public void storeExclusive(int size, Register rs, Register rt, Register rn, boolean release) {
+        if (release) {
+            stlxr(size, rs, rt, rn);
+        } else {
+            stxr(size, rs, rt, rn);
+        }
+    }
+
     /* Load-Acquire/Store-Release (5.3.7) */
 
     /* non exclusive access */
@@ -1477,7 +1512,7 @@ public abstract class AArch64Assembler extends Assembler {
      * compares it against a given value rs, and, if equal, stores the value rt to memory. The value
      * read from address rn is stored in register rs.
      *
-     * @param size size of bits read from memory. Must be 32 or 64.
+     * @param size size of bits read from memory. Must be 8, 16, 32 or 64.
      * @param rs general purpose register to be compared and loaded. May not be null.
      * @param rt general purpose register to be conditionally stored. May not be null.
      * @param rn general purpose register containing the address from which to read.
@@ -1485,7 +1520,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param release boolean value signifying if the store should use release semantics.
      */
     public void cas(int size, Register rs, Register rt, Register rn, boolean acquire, boolean release) {
-        assert size == 32 || size == 64;
+        assert size == 8 || size == 16 || size == 32 || size == 64;
         int transferSize = NumUtil.log2Ceil(size / 8);
         compareAndSwapInstruction(CAS, rs, rt, rn, transferSize, acquire, release);
     }

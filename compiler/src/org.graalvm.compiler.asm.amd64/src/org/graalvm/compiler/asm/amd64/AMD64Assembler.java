@@ -2520,6 +2520,10 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         AMD64RMOp.MOVSX.emit(this, DWORD, dst, src);
     }
 
+    public final void movswl(Register dst, Register src) {
+        AMD64RMOp.MOVSX.emit(this, DWORD, dst, src);
+    }
+
     public final void movswq(Register dst, AMD64Address src) {
         AMD64RMOp.MOVSX.emit(this, QWORD, dst, src);
     }
