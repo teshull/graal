@@ -118,26 +118,27 @@ public class AArch64AtomicMove {
                  *
                  * ldaxr -> B -> A -> stlxr
                  *
-                 * Note that only dmb is needed to prevent instructions after the atomic operation
-                 * from execution too early. All instructions before the atomic operation are
-                 * ordered with the stlxr.
+                 * Note that only dmb is needed to prevent instructions before the atomic operation
+                 * from executing too late. All instructions after the atomic operation are ordered
+                 * after the ldaxr and, if it occurs, will also see updated value since it is a
+                 * stxr.
                  */
                 boolean fullBarrier = acquire && release;
+                if (fullBarrier) {
+                    masm.dmb(AArch64Assembler.BarrierKind.ANY_ANY);
+                }
 
                 Register scratch = asRegister(scratchValue);
                 Label retry = new Label();
                 Label fail = new Label();
                 masm.bind(retry);
-                masm.loadExclusive(size, result, address, !fullBarrier && acquire);
+                masm.loadExclusive(size, result, address, fullBarrier || acquire);
                 AArch64Compare.gpCompare(masm, resultValue, expectedValue);
                 masm.branchConditionally(AArch64Assembler.ConditionFlag.NE, fail);
-                masm.storeExclusive(size, scratch, newVal, address, fullBarrier || release);
+                masm.storeExclusive(size, scratch, newVal, address, !fullBarrier && release);
                 // if scratch == 0 then write successful, else retry.
                 masm.cbnz(32, scratch, retry);
                 masm.bind(fail);
-                if (fullBarrier) {
-                    masm.dmb(AArch64Assembler.BarrierKind.ANY_ANY);
-                }
             }
         }
     }
