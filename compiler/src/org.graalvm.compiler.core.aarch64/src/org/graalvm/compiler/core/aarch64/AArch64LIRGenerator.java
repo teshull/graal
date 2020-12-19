@@ -154,9 +154,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
-        Variable prevValue = newVariable(expectedValue.getValueKind());
-        Variable scratch = newVariable(LIRKind.value(AArch64Kind.DWORD));
-        append(new CompareAndSwapOp((AArch64Kind) accessKind.getPlatformKind(), prevValue, loadReg(expectedValue), loadReg(newValue), asAllocatable(address), scratch, memoryOrder));
+        emitCompareAndSwap(accessKind, address, expectedValue, newValue, memoryOrder);
         assert trueValue.getValueKind().equals(falseValue.getValueKind());
         assert isIntConstant(trueValue, 1) && isIntConstant(falseValue, 0);
         Variable result = newVariable(trueValue.getValueKind());
@@ -166,8 +164,14 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
-        Variable result = newVariable(newValue.getValueKind());
-        Variable scratch = newVariable(LIRKind.value(AArch64Kind.WORD));
+        return emitCompareAndSwap(accessKind, address, expectedValue, newValue, memoryOrder);
+    }
+
+    private Variable emitCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
+        //FIXME in AMD64 floats and doubles are converted to word types - why is this not happening here?
+        //Are these types never needed?? Should check this
+        Variable result = newVariable(expectedValue.getValueKind());
+        Variable scratch = newVariable(LIRKind.value(AArch64Kind.DWORD));
         append(new CompareAndSwapOp((AArch64Kind) accessKind.getPlatformKind(), result, loadReg(expectedValue), loadReg(newValue), asAllocatable(address), scratch, memoryOrder));
         return result;
     }

@@ -70,7 +70,7 @@ public class AArch64AtomicMove {
         @Temp protected AllocatableValue scratchValue;
 
         public CompareAndSwapOp(AArch64Kind accessKind, AllocatableValue result, Value expectedValue, AllocatableValue newValue, AllocatableValue addressValue, AllocatableValue scratch,
-                                MemoryOrderMode memoryOrder) {
+                        MemoryOrderMode memoryOrder) {
             super(TYPE);
             this.accessKind = accessKind;
             this.resultValue = result;
@@ -105,17 +105,39 @@ public class AArch64AtomicMove {
                 // We could avoid using a scratch register here, by reusing resultValue for the
                 // stlxr success flag and issue a mov resultValue, expectedValue in case of success
                 // before returning.
+
+                /*
+                 * If both an acquire and release are requested, a full barrier is expected, and no
+                 * instructions should reordered across the atomic operations. Unfortunately, since
+                 * ldaxr and stlxr implement "half" barriers, then it is possible for instructions
+                 * on either side of the atomic operation to be reordered. For example,
+                 *
+                 * A -> ldaxr -> stlxr -> B
+                 *
+                 * can execute as:
+                 *
+                 * ldaxr -> B -> A -> stlxr
+                 *
+                 * Note that only dmb is needed to prevent instructions after the atomic operation
+                 * from execution too early. All instructions before the atomic operation are
+                 * ordered with the stlxr.
+                 */
+                boolean fullBarrier = acquire && release;
+
                 Register scratch = asRegister(scratchValue);
                 Label retry = new Label();
                 Label fail = new Label();
                 masm.bind(retry);
-                masm.loadExclusive(size, result, address, acquire);
+                masm.loadExclusive(size, result, address, !fullBarrier && acquire);
                 AArch64Compare.gpCompare(masm, resultValue, expectedValue);
                 masm.branchConditionally(AArch64Assembler.ConditionFlag.NE, fail);
-                masm.storeExclusive(size, scratch, newVal, address, release);
+                masm.storeExclusive(size, scratch, newVal, address, fullBarrier || release);
                 // if scratch == 0 then write successful, else retry.
                 masm.cbnz(32, scratch, retry);
                 masm.bind(fail);
+                if (fullBarrier) {
+                    masm.dmb(AArch64Assembler.BarrierKind.ANY_ANY);
+                }
             }
         }
     }
