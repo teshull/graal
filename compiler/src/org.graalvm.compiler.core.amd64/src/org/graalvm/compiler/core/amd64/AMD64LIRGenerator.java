@@ -237,6 +237,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         Value reinterpretedExpectedValue = expectedValue;
         Value reinterpretedNewValue = newValue;
         boolean isXmm = ((AMD64Kind) accessKind.getPlatformKind()).isXMM();
+        GraalError.guarantee(!isXmm, "Encountering FP operations");
         if (isXmm) {
             if (accessKind.getPlatformKind().equals(AMD64Kind.SINGLE)) {
                 integralAccessKind = LIRKind.fromJavaKind(target().arch, JavaKind.Int);
