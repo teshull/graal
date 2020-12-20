@@ -155,7 +155,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
-        emitCompareAndSwap(true, accessKind, address, expectedValue, newValue, memoryOrder);
+        emitCompareAndSwap(false, accessKind, address, expectedValue, newValue, memoryOrder);
         assert trueValue.getValueKind().equals(falseValue.getValueKind());
         assert isIntConstant(trueValue, 1) && isIntConstant(falseValue, 0);
         Variable result = newVariable(trueValue.getValueKind());
@@ -165,7 +165,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
-        return emitCompareAndSwap(false, accessKind, address, expectedValue, newValue, memoryOrder);
+        return emitCompareAndSwap(true, accessKind, address, expectedValue, newValue, memoryOrder);
     }
 
     private Variable emitCompareAndSwap(boolean isValue, LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
